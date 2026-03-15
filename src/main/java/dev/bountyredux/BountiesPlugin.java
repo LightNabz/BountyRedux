@@ -3,6 +3,7 @@ package dev.bountyredux;
 import dev.bountyredux.commands.BountyCommand;
 import dev.bountyredux.database.DatabaseManager;
 import dev.bountyredux.listeners.PlayerDeathListener;
+import dev.bountyredux.listeners.PlayerJoinListener;
 import dev.bountyredux.managers.BountyManager;
 import dev.bountyredux.managers.CooldownManager;
 import dev.bountyredux.utils.SkinRestorerHook;
@@ -30,12 +31,7 @@ public class BountiesPlugin extends JavaPlugin {
             return;
         }
 
-        SkinRestorerHook.setup();
-        if (SkinRestorerHook.isAvailable()) {
-            getLogger().info("SkinRestorer found — cracked player skins will render correctly.");
-        } else {
-            getLogger().info("SkinRestorer not found — only premium player skins will render.");
-        }
+        getServer().getPluginManager().registerEvents(new PlayerJoinListener(this), this);
 
         databaseManager = new DatabaseManager(this);
         databaseManager.connect();

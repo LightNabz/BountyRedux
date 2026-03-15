@@ -16,6 +16,7 @@ import java.util.logging.Level;
  * Schema:
  *   bounties(id, target_uuid, target_name, placer_uuid, placer_name, amount, created_at)
  *   uuid_cache(player_name, player_uuid)
+ *   texture_cache(player_name, skin_value, skin_signature)
  */
 public class DatabaseManager {
 
@@ -41,6 +42,14 @@ public class DatabaseManager {
             );
             """;
 
+    private static final String CREATE_TEXTURE_CACHE = """
+            CREATE TABLE IF NOT EXISTS texture_cache (
+                player_name     TEXT PRIMARY KEY COLLATE NOCASE,
+                skin_value      TEXT NOT NULL,
+                skin_signature  TEXT NOT NULL
+            );
+            """;
+
     private static final String INSERT_BOUNTY =
             "INSERT INTO bounties (target_uuid, target_name, placer_uuid, placer_name, amount) VALUES (?, ?, ?, ?, ?)";
 
@@ -63,6 +72,12 @@ public class DatabaseManager {
 
     private static final String SELECT_UUID =
             "SELECT player_uuid FROM uuid_cache WHERE player_name = ? COLLATE NOCASE";
+
+    private static final String UPSERT_TEXTURE =
+            "INSERT OR REPLACE INTO texture_cache (player_name, skin_value, skin_signature) VALUES (?, ?, ?)";
+
+    private static final String SELECT_TEXTURE =
+            "SELECT skin_value, skin_signature FROM texture_cache WHERE player_name = ? COLLATE NOCASE";
 
     public DatabaseManager(BountiesPlugin plugin) {
         this.plugin = plugin;
@@ -106,6 +121,7 @@ public class DatabaseManager {
         try (Statement stmt = connection.createStatement()) {
             stmt.execute(CREATE_TABLE);
             stmt.execute(CREATE_UUID_CACHE);
+            stmt.execute(CREATE_TEXTURE_CACHE);
         }
     }
 
@@ -164,6 +180,33 @@ public class DatabaseManager {
             if (rs.next()) return UUID.fromString(rs.getString("player_uuid"));
         } catch (SQLException e) {
             plugin.getLogger().log(Level.WARNING, "Failed to get cached UUID for " + playerName, e);
+        }
+        return null;
+    }
+
+    // ── Texture cache ─────────────────────────────────────────────────────────
+
+    public void cacheTexture(String playerName, String value, String signature) {
+        try (PreparedStatement ps = connection.prepareStatement(UPSERT_TEXTURE)) {
+            ps.setString(1, playerName);
+            ps.setString(2, value);
+            ps.setString(3, signature);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.WARNING, "Failed to cache texture for " + playerName, e);
+        }
+    }
+
+    public String[] getCachedTexture(String playerName) {
+        try (PreparedStatement ps = connection.prepareStatement(SELECT_TEXTURE)) {
+            ps.setString(1, playerName);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) return new String[]{
+                    rs.getString("skin_value"),
+                    rs.getString("skin_signature")
+            };
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.WARNING, "Failed to get cached texture for " + playerName, e);
         }
         return null;
     }

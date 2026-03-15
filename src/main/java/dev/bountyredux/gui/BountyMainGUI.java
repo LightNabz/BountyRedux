@@ -85,44 +85,20 @@ public class BountyMainGUI {
 
         meta.setDisplayName("§c" + playerName);
         meta.setLore(List.of("§7Bounty: §6$" + String.format("%.2f", bountyTotal)));
+
+        // Try cached texture first (works offline, cracked, SR, premium — everything)
+        String[] texture = plugin.getDatabaseManager().getCachedTexture(playerName);
+        if (texture != null) {
+            try {
+                com.destroystokyo.paper.profile.PlayerProfile profile =
+                        Bukkit.createProfile(UUID.randomUUID(), playerName);
+                profile.setProperty(new com.destroystokyo.paper.profile.ProfileProperty(
+                        "textures", texture[0], texture[1]));
+                meta.setPlayerProfile(profile);
+            } catch (Exception ignored) {}
+        }
+
         skull.setItemMeta(meta);
-
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            // Step 1: check our own UUID cache
-            UUID uuid = plugin.getDatabaseManager().getCachedUUID(playerName);
-
-            // Step 2: if not cached, try Mojang (premium players)
-            if (uuid == null) {
-                uuid = MojangAPI.fetchUUID(playerName);
-                if (uuid != null) {
-                    plugin.getDatabaseManager().cacheUUID(playerName, uuid);
-                }
-            }
-
-            // Step 3: if still null, generate offline UUID (cracked players)
-            // SkinRestorer uses this same formula internally for cracked players
-            if (uuid == null) {
-                uuid = UUID.nameUUIDFromBytes(("OfflinePlayer:" + playerName).getBytes());
-            }
-
-            final UUID finalUUID = uuid;
-
-            Bukkit.getScheduler().runTask(plugin, () -> {
-                SkullMeta updatedMeta = (SkullMeta) skull.getItemMeta();
-                if (updatedMeta == null) return;
-
-                // Step 4: try SkinRestorer first — handles both premium + cracked with SR skins
-                boolean srApplied = SkinRestorerHook.applyStoredSkin(updatedMeta, finalUUID, playerName);
-
-                if (!srApplied) {
-                    // Step 5: fallback to Mojang profile (premium without SR)
-                    updatedMeta.setOwningPlayer(Bukkit.getOfflinePlayer(finalUUID));
-                }
-
-                skull.setItemMeta(updatedMeta);
-            });
-        });
-
         return skull;
     }
 
