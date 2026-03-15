@@ -15,6 +15,7 @@ import java.util.logging.Level;
  *
  * Schema:
  *   bounties(id, target_uuid, target_name, placer_uuid, placer_name, amount, created_at)
+ *   uuid_cache(player_name, player_uuid)
  */
 public class DatabaseManager {
 
@@ -30,6 +31,13 @@ public class DatabaseManager {
                 placer_name TEXT    NOT NULL,
                 amount      REAL    NOT NULL,
                 created_at  INTEGER NOT NULL DEFAULT (strftime('%s','now'))
+            );
+            """;
+
+    private static final String CREATE_UUID_CACHE = """
+            CREATE TABLE IF NOT EXISTS uuid_cache (
+                player_name TEXT PRIMARY KEY COLLATE NOCASE,
+                player_uuid TEXT NOT NULL
             );
             """;
 
@@ -49,6 +57,12 @@ public class DatabaseManager {
             ORDER BY total DESC
             LIMIT ?
             """;
+
+    private static final String UPSERT_UUID =
+            "INSERT OR REPLACE INTO uuid_cache (player_name, player_uuid) VALUES (?, ?)";
+
+    private static final String SELECT_UUID =
+            "SELECT player_uuid FROM uuid_cache WHERE player_name = ? COLLATE NOCASE";
 
     public DatabaseManager(BountiesPlugin plugin) {
         this.plugin = plugin;
@@ -91,8 +105,11 @@ public class DatabaseManager {
     private void initTable() throws SQLException {
         try (Statement stmt = connection.createStatement()) {
             stmt.execute(CREATE_TABLE);
+            stmt.execute(CREATE_UUID_CACHE);
         }
     }
+
+    // ── Bounty CRUD ───────────────────────────────────────────────────────────
 
     public void insertBounty(Bounty bounty) {
         try (PreparedStatement ps = connection.prepareStatement(INSERT_BOUNTY)) {
@@ -127,6 +144,31 @@ public class DatabaseManager {
             return 0;
         }
     }
+
+    // ── UUID cache ────────────────────────────────────────────────────────────
+
+    public void cacheUUID(String playerName, UUID uuid) {
+        try (PreparedStatement ps = connection.prepareStatement(UPSERT_UUID)) {
+            ps.setString(1, playerName);
+            ps.setString(2, uuid.toString());
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.WARNING, "Failed to cache UUID for " + playerName, e);
+        }
+    }
+
+    public UUID getCachedUUID(String playerName) {
+        try (PreparedStatement ps = connection.prepareStatement(SELECT_UUID)) {
+            ps.setString(1, playerName);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) return UUID.fromString(rs.getString("player_uuid"));
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.WARNING, "Failed to get cached UUID for " + playerName, e);
+        }
+        return null;
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
 
     private Bounty mapRow(ResultSet rs) throws SQLException {
         return new Bounty(

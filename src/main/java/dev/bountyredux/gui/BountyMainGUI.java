@@ -2,6 +2,9 @@ package dev.bountyredux.gui;
 
 import dev.bountyredux.BountiesPlugin;
 import dev.bountyredux.managers.BountyManager;
+import dev.bountyredux.utils.MojangAPI;
+import dev.bountyredux.utils.SkinRestorerHook;
+
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -79,10 +82,47 @@ public class BountyMainGUI {
         ItemStack skull = new ItemStack(Material.PLAYER_HEAD);
         SkullMeta meta  = (SkullMeta) skull.getItemMeta();
         if (meta == null) return skull;
-        meta.setOwningPlayer(Bukkit.getOfflinePlayer(playerName));
+
         meta.setDisplayName("§c" + playerName);
         meta.setLore(List.of("§7Bounty: §6$" + String.format("%.2f", bountyTotal)));
         skull.setItemMeta(meta);
+
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            // Step 1: check our own UUID cache
+            UUID uuid = plugin.getDatabaseManager().getCachedUUID(playerName);
+
+            // Step 2: if not cached, try Mojang (premium players)
+            if (uuid == null) {
+                uuid = MojangAPI.fetchUUID(playerName);
+                if (uuid != null) {
+                    plugin.getDatabaseManager().cacheUUID(playerName, uuid);
+                }
+            }
+
+            // Step 3: if still null, generate offline UUID (cracked players)
+            // SkinRestorer uses this same formula internally for cracked players
+            if (uuid == null) {
+                uuid = UUID.nameUUIDFromBytes(("OfflinePlayer:" + playerName).getBytes());
+            }
+
+            final UUID finalUUID = uuid;
+
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                SkullMeta updatedMeta = (SkullMeta) skull.getItemMeta();
+                if (updatedMeta == null) return;
+
+                // Step 4: try SkinRestorer first — handles both premium + cracked with SR skins
+                boolean srApplied = SkinRestorerHook.applyStoredSkin(updatedMeta, finalUUID, playerName);
+
+                if (!srApplied) {
+                    // Step 5: fallback to Mojang profile (premium without SR)
+                    updatedMeta.setOwningPlayer(Bukkit.getOfflinePlayer(finalUUID));
+                }
+
+                skull.setItemMeta(updatedMeta);
+            });
+        });
+
         return skull;
     }
 

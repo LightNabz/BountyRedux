@@ -5,6 +5,7 @@ import dev.bountyredux.database.DatabaseManager;
 import dev.bountyredux.listeners.PlayerDeathListener;
 import dev.bountyredux.managers.BountyManager;
 import dev.bountyredux.managers.CooldownManager;
+import dev.bountyredux.utils.SkinRestorerHook;
 import dev.bountyredux.vault.VaultHook;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -27,6 +28,13 @@ public class BountiesPlugin extends JavaPlugin {
             getLogger().severe("Vault not found! Disabling Bounties.");
             getServer().getPluginManager().disablePlugin(this);
             return;
+        }
+
+        SkinRestorerHook.setup();
+        if (SkinRestorerHook.isAvailable()) {
+            getLogger().info("SkinRestorer found — cracked player skins will render correctly.");
+        } else {
+            getLogger().info("SkinRestorer not found — only premium player skins will render.");
         }
 
         databaseManager = new DatabaseManager(this);
