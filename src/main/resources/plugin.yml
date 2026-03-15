@@ -16,35 +16,39 @@ softdepend:
 commands:
   bounty:
     description: Main bounty command.
-    usage: /bounty [add|search|clear|reload]
+    usage: /bounty [add|search|clear|reload|track]
     permission: bounties.use
 
 permissions:
-  bounties.use:
+  bountyredux.use:
     description: Allows opening the bounty menu.
     default: true
-  bounties.add:
+  bountyredux.add:
     description: Allows adding a bounty on a player.
     default: true
-  bounties.search:
+  bountyredux.search:
     description: Allows searching a player's bounties.
     default: true
-  bounties.clear:
+  bountyredux.track:
+    description: Allows tracking a bountied player.
+    default: true
+  bountyredux.clear:
     description: Allows clearing a player's bounty (admin).
     default: op
-  bounties.reload:
+  bountyredux.reload:
     description: Allows reloading the plugin config.
     default: op
-  bounties.admin:
+  bountyredux.admin:
     description: Grants full admin access.
     default: op
-  bounties.*:
+  bountyredux.*:
     description: Gives every permission in the plugin.
     default: op
     children:
-      bounties.use: true
-      bounties.add: true
-      bounties.search: true
-      bounties.clear: true
-      bounties.reload: true
-      bounties.admin: true
+      bountyredux.use: true
+      bountyredux.add: true
+      bountyredux.search: true
+      bountyredux.clear: true
+      bountyredux.reload: true
+      bountyredux.admin: true
+      bountyredux.track: true

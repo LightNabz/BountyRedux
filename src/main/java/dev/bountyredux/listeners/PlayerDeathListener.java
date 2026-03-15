@@ -22,7 +22,9 @@ public class PlayerDeathListener implements Listener {
     public void onPlayerDeath(PlayerDeathEvent event) {
         Player victim = event.getEntity();
         Player killer = victim.getKiller();
-
+        
+        plugin.getTrackingManager().onTargetDeath(event.getEntity());
+        
         if (killer == null) return;
         if (killer.equals(victim)) return;
 

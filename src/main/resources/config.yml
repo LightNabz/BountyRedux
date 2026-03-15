@@ -12,6 +12,16 @@ settings:
   # GUI title
   gui-title: "§6§lBounty Menu"
 
+tracking:
+  # Cost mode: 'fixed' or 'percentage'
+  cost-mode: percentage
+  # Fixed cost in currency (e.g. 500 = $500)
+  fixed-cost: 500
+  # Percentage of the target's total bounty (e.g. 5 = 5%)
+  percentage-cost: 5
+  # Duration in seconds (default 300 = 5 minutes)
+  duration: 300
+
 messages:
   prefix: "§8[§6Bounty§8] §r"
   bounty-placed: "§aYou placed a bounty of §6${amount} §aon §e{target}§a!"

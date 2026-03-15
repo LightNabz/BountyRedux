@@ -5,6 +5,8 @@ import dev.bountyredux.gui.BountyConfirmGUI;
 import dev.bountyredux.gui.BountyMainGUI;
 import dev.bountyredux.managers.BountyManager;
 import dev.bountyredux.managers.CooldownManager;
+import dev.bountyredux.gui.TrackConfirmGUI;
+import dev.bountyredux.managers.TrackingManager;
 import dev.bountyredux.vault.VaultHook;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -18,23 +20,27 @@ import org.bukkit.inventory.meta.SkullMeta;
 
 import java.util.*;
 
+
 public class GUIListener implements Listener {
 
     private final BountiesPlugin plugin;
     private final BountyMainGUI mainGUI;
     private final BountyConfirmGUI confirmGUI;
+    private final TrackConfirmGUI trackConfirmGUI;
 
     public static final Map<UUID, Object[]> pendingConfirmations = new HashMap<>();
-    private final Map<UUID, Integer> playerPage      = new HashMap<>();
-    private final Map<UUID, Boolean> playerSortMode  = new HashMap<>();
+    public static final Map<UUID, String> pendingTrack = new HashMap<>();
+    private final Map<UUID, Integer> playerPage     = new HashMap<>();
+    private final Map<UUID, Boolean> playerSortMode = new HashMap<>();
 
     // Players currently waiting to type a name in chat for search
     private final Set<UUID> awaitingChatSearch = new HashSet<>();
 
-    public GUIListener(BountiesPlugin plugin, BountyMainGUI mainGUI, BountyConfirmGUI confirmGUI) {
-        this.plugin     = plugin;
-        this.mainGUI    = mainGUI;
-        this.confirmGUI = confirmGUI;
+    public GUIListener(BountiesPlugin plugin, BountyMainGUI mainGUI, BountyConfirmGUI confirmGUI, TrackConfirmGUI trackConfirmGUI) {
+        this.plugin          = plugin;
+        this.mainGUI         = mainGUI;
+        this.confirmGUI      = confirmGUI;
+        this.trackConfirmGUI = trackConfirmGUI;
     }
 
     // ── Inventory clicks ──────────────────────────────────────────────────────
@@ -93,17 +99,55 @@ public class GUIListener implements Listener {
                 return;
             }
 
-            // Player head click — show bounty details in chat
+            // ── Player head click — open track confirm ────────────────────────
             if (slot < 45 && event.getCurrentItem().getType() == Material.PLAYER_HEAD) {
-                SkullMeta meta = (SkullMeta) event.getCurrentItem().getItemMeta();
-                if (meta != null && meta.getOwningPlayer() != null) {
-                    String targetName = meta.getOwningPlayer().getName();
-                    if (targetName == null) return;
-                    UUID targetUUID = meta.getOwningPlayer().getUniqueId();
-                    double total = plugin.getBountyManager().getTotalBounty(targetUUID);
+                if (!player.hasPermission("bountyredux.track")) {
                     player.sendMessage(plugin.getConfig().getString("messages.prefix", "[Bounties] ")
-                            + "§e" + targetName + " §7— Bounty: §6$" + String.format("%.2f", total));
+                            + "§cYou don't have permission to track players.");
+                    return;
                 }
+
+                SkullMeta meta = (SkullMeta) event.getCurrentItem().getItemMeta();
+                if (meta == null) return;
+
+                // FIX: Use owning player profile first — way more reliable than parsing display name
+                String targetName = null;
+                if (meta.getOwningPlayer() != null && meta.getOwningPlayer().getName() != null) {
+                    targetName = meta.getOwningPlayer().getName();
+                } else {
+                    // Fallback: strip ALL color/format codes from display name, not just §c
+                    String displayName = meta.getDisplayName();
+                    if (displayName == null || displayName.isEmpty()) return;
+                    targetName = displayName.replaceAll("§[0-9a-fk-orA-FK-OR]", "").trim();
+                }
+
+                if (targetName.isEmpty()) return;
+
+                if (targetName.equalsIgnoreCase(player.getName())) {
+                    player.sendMessage(plugin.getConfig().getString("messages.prefix", "[Bounties] ")
+                            + "§cYou can't track yourself!");
+                    return;
+                }
+
+                // FIX: Null-check target BEFORE calling any method on it
+                Player target = Bukkit.getPlayerExact(targetName);
+                if (target == null) {
+                    player.sendMessage(plugin.getConfig().getString("messages.prefix", "[Bounties] ")
+                            + "§c" + targetName + " is not found or not online — cannot track.");
+                    return;
+                }
+
+                // At this point target is guaranteed non-null, safe to call isOnline()
+                if (!target.isOnline()) {
+                    player.sendMessage(plugin.getConfig().getString("messages.prefix", "[Bounties] ")
+                            + "§c" + targetName + " is not online — cannot track.");
+                    return;
+                }
+
+                player.closeInventory();
+                double cost = plugin.getTrackingManager().calculateCost(target.getUniqueId());
+                pendingTrack.put(player.getUniqueId(), targetName);
+                trackConfirmGUI.open(player, targetName, cost);
             }
         }
 
@@ -111,6 +155,35 @@ public class GUIListener implements Listener {
         if (title.startsWith(BountyConfirmGUI.CONFIRM_TITLE_PREFIX)) {
             event.setCancelled(true);
             handleConfirmClick(player, event.getSlot());
+        }
+
+        // ── Track Confirm GUI ─────────────────────────────────────────────────
+        if (title.startsWith(TrackConfirmGUI.TITLE_PREFIX)) {
+            event.setCancelled(true);
+            String targetName = pendingTrack.get(player.getUniqueId());
+            if (targetName == null) { player.closeInventory(); return; }
+
+            if (event.getSlot() == 11) {
+                // CONFIRM
+                pendingTrack.remove(player.getUniqueId());
+                player.closeInventory();
+
+                // FIX: Re-validate target is still online at confirm time
+                Player target = Bukkit.getPlayerExact(targetName);
+                if (target == null || !target.isOnline()) {
+                    player.sendMessage(plugin.getConfig().getString("messages.prefix", "[Bounties] ")
+                            + "§c" + targetName + " went offline.");
+                    return;
+                }
+                plugin.getTrackingManager().startTracking(player, target);
+
+            } else if (event.getSlot() == 15) {
+                // CANCEL
+                pendingTrack.remove(player.getUniqueId());
+                player.closeInventory();
+                player.sendMessage(plugin.getConfig().getString("messages.prefix", "[Bounties] ")
+                        + "§cTracking cancelled.");
+            }
         }
     }
 
@@ -163,7 +236,7 @@ public class GUIListener implements Listener {
         });
     }
 
-    // ── Confirm GUI ───────────────────────────────────────────────────────────
+    // ── Confirm GUI handler ───────────────────────────────────────────────────
 
     private void handleConfirmClick(Player player, int slot) {
         Object[] pending = pendingConfirmations.get(player.getUniqueId());
@@ -196,7 +269,7 @@ public class GUIListener implements Listener {
             cm.setCooldown(player.getUniqueId());
 
             plugin.getServer().broadcastMessage(
-                    plugin.getConfig().getString("messages.prefix", "[Bounties] ")
+                    plugin.getConfig().getString("messages.prefix", "[Bounty] ")
                             + "§e" + player.getName() + " §aplaced a bounty of §6$"
                             + String.format("%.2f", amount) + " §aon §e" + targetName + "§a!");
 

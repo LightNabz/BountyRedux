@@ -45,18 +45,19 @@ This plugin fixes that properly:
 
 | Command | Description | Permission |
 |---|---|---|
-| `/bounty` | Opens the bounty menu | `bounties.use` |
-| `/bounty add <player> <amount>` | Add a bounty | `bounties.add` |
-| `/bounty search <player>` | View a player's bounties | `bounties.search` |
-| `/bounty clear <player>` | Clear a player's bounties | `bounties.clear` |
-| `/bounty reload` | Reload config | `bounties.reload` |
+| `/bounty` | Opens the bounty menu | `bountyredux.use` |
+| `/bounty add <player> <amount>` | Add a bounty | `bountyredux.add` |
+| `/bounty search <player>` | View a player's bounties | `bountyredux.search` |
+| `/bounty track <player>` | Track player | `bountyredux.track` |
+| `/bounty clear <player>` | Clear a player's bounties | `bountyredux.clear` |
+| `/bounty reload` | Reload config | `bountyredux.reload` |
 
 **Permission nodes:**
-- `bounties.add` — place bounties
-- `bounties.reload` — reload config
-- `bounties.clear` — clear bounties
-- `bounties.admin` — full admin access
-- `bounties.*` — all permissions
+- `bountyredux.add` — place bounties
+- `bountyredux.reload` — reload config
+- `bountyredux.clear` — clear bounties
+- `bountyredux.admin` — full admin access
+- `bountyredux.*` — all permissions
 
 ---
 
@@ -86,6 +87,16 @@ settings:
   add-cooldown: 60
   # GUI title
   gui-title: "§6§lBounty Menu"
+
+tracking:
+  # Cost mode: 'fixed' or 'percentage'
+  cost-mode: percentage
+  # Fixed cost in currency (e.g. 500 = $500)
+  fixed-cost: 500
+  # Percentage of the target's total bounty (e.g. 5 = 5%)
+  percentage-cost: 5
+  # Duration in seconds (default 300 = 5 minutes)
+  duration: 300
 
 messages:
   prefix: "§8[§6Bounty§8] §r"

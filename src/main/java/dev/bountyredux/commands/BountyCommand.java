@@ -13,6 +13,8 @@ import dev.bountyredux.listeners.GUIListener;
 import dev.bountyredux.managers.BountyManager;
 import dev.bountyredux.managers.CooldownManager;
 import dev.bountyredux.model.Bounty;
+import dev.bountyredux.managers.TrackingManager;
+import dev.bountyredux.gui.TrackConfirmGUI;
 
 import java.util.Arrays;
 import java.util.List;
@@ -26,14 +28,13 @@ public class BountyCommand implements CommandExecutor, TabCompleter {
     private final BountiesPlugin plugin;
     private final BountyMainGUI mainGUI;
     private final BountyConfirmGUI confirmGUI;
+    private final TrackConfirmGUI trackGUI;
 
-    public BountyCommand(BountiesPlugin plugin) {
-        this.plugin = plugin;
-        this.mainGUI = new BountyMainGUI(plugin);
-        this.confirmGUI = new BountyConfirmGUI(plugin);
-
-        // Register GUI listener here
-        plugin.getServer().getPluginManager().registerEvents(new GUIListener(plugin, mainGUI, confirmGUI), plugin);
+    public BountyCommand(BountiesPlugin plugin, BountyMainGUI mainGUI, BountyConfirmGUI confirmGUI, TrackConfirmGUI trackGUI) {
+        this.plugin     = plugin;
+        this.mainGUI    = mainGUI;
+        this.confirmGUI = confirmGUI;
+        this.trackGUI   = trackGUI;
     }
 
     @Override
@@ -44,22 +45,23 @@ public class BountyCommand implements CommandExecutor, TabCompleter {
         }
 
         if (args.length == 0) {
-            mainGUI.open(player, 1, true); // page 1, sort by amount
+            mainGUI.open(player, 1, true);
             return true;
         }
 
         switch (args[0].toLowerCase()) {
-            case "add" -> handleAdd(player, args);
+            case "add"    -> handleAdd(player, args);
             case "search" -> handleSearch(player, args);
-            case "clear" -> handleClear(player, args);
+            case "clear"  -> handleClear(player, args);
             case "reload" -> handleReload(player);
-            default -> mainGUI.open(player, 1, true);
+            case "track"  -> handleTrack(player, args);
+            default       -> mainGUI.open(player, 1, true);
         }
         return true;
     }
 
     private void handleAdd(Player player, String[] args) {
-        if (!player.hasPermission("bounties.add")) {
+        if (!player.hasPermission("bountyredux.add")) {
             player.sendMessage(plugin.getMessage("no-permission"));
             return;
         }
@@ -107,7 +109,6 @@ public class BountyCommand implements CommandExecutor, TabCompleter {
             return;
         }
 
-        // Open confirm GUI
         GUIListener.pendingConfirmations.put(player.getUniqueId(), new Object[]{targetName, amount});
         confirmGUI.open(player, targetName, amount);
     }
@@ -119,7 +120,6 @@ public class BountyCommand implements CommandExecutor, TabCompleter {
         }
 
         String targetName = args[1];
-        // Try to find by online player first
         Player target = plugin.getServer().getPlayerExact(targetName);
         java.util.UUID targetUUID = target != null
                 ? target.getUniqueId()
@@ -141,7 +141,7 @@ public class BountyCommand implements CommandExecutor, TabCompleter {
     }
 
     private void handleClear(Player player, String[] args) {
-        if (!player.hasPermission("bounties.clear") && !player.hasPermission("bounties.admin")) {
+        if (!player.hasPermission("bountyredux.clear") && !player.hasPermission("bountyredux.admin")) {
             player.sendMessage(plugin.getMessage("no-permission"));
             return;
         }
@@ -168,7 +168,7 @@ public class BountyCommand implements CommandExecutor, TabCompleter {
     }
 
     private void handleReload(Player player) {
-        if (!player.hasPermission("bounties.reload") && !player.hasPermission("bounties.admin")) {
+        if (!player.hasPermission("bountyredux.reload") && !player.hasPermission("bountyredux.admin")) {
             player.sendMessage(plugin.getMessage("no-permission"));
             return;
         }
@@ -179,7 +179,7 @@ public class BountyCommand implements CommandExecutor, TabCompleter {
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (args.length == 1) {
-            return Arrays.asList("add", "search", "clear", "reload")
+            return Arrays.asList("add", "search", "clear", "reload", "track")
                     .stream()
                     .filter(s -> s.startsWith(args[0].toLowerCase()))
                     .collect(Collectors.toList());
@@ -195,4 +195,62 @@ public class BountyCommand implements CommandExecutor, TabCompleter {
         }
         return List.of();
     }
+
+    private void handleTrack(Player player, String[] args) {
+        if (!player.hasPermission("bountyredux.track")) {
+            player.sendMessage(plugin.getMessage("no-permission"));
+            return;
+        }
+        if (args.length < 2) {
+            player.sendMessage("§cUsage: /bounty track <player|cancel>");
+            return;
+        }
+
+        TrackingManager tm = plugin.getTrackingManager();
+
+        if (args[1].equalsIgnoreCase("cancel")) {
+            if (!tm.isTracking(player.getUniqueId())) {
+                player.sendMessage(plugin.getConfig().getString("messages.prefix", "[Bounty] ")
+                        + "§cYou are not tracking anyone.");
+                return;
+            }
+            tm.stopTracking(player, true);
+            return;
+        }
+
+        // FIX: use args[1] (the name string) for the error message, NOT target.getName()
+        // so we never call .getName() on a potentially null Player object
+        String targetName = args[1];
+        Player target = plugin.getServer().getPlayerExact(targetName);
+
+        if (target == null) {
+            player.sendMessage(plugin.getConfig().getString("messages.prefix", "[Bounties] ")
+                    + "§c" + targetName + " is not found or not online — cannot track.");
+            return;
+        }
+
+        // target is guaranteed non-null here, safe to call isOnline()
+        if (!target.isOnline()) {
+            player.sendMessage(plugin.getConfig().getString("messages.prefix", "[Bounties] ")
+                    + "§c" + targetName + " is not online — cannot track.");
+            return;
+        }
+
+        if (target.equals(player)) {
+            player.sendMessage(plugin.getConfig().getString("messages.prefix", "[Bounty] ")
+                    + "§cYou can't track yourself!");
+            return;
+        }
+
+        if (!plugin.getBountyManager().hasBounty(target.getUniqueId())) {
+            player.sendMessage(plugin.getConfig().getString("messages.prefix", "[Bounty] ")
+                    + "§c" + targetName + " §chas no bounty.");
+            return;
+        }
+
+        double cost = tm.calculateCost(target.getUniqueId());
+        GUIListener.pendingTrack.put(player.getUniqueId(), target.getName());
+        trackGUI.open(player, target.getName(), cost);
+    }
+
 }
