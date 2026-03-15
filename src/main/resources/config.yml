@@ -1,0 +1,33 @@
+# ============================================
+#   Bounties Plugin — GPLv3
+#   Inspired by DonutSMP Bounty Plugin
+# ============================================
+
+settings:
+  # Minimum bounty amount a player can place
+  min-bounty: 100
+  # Maximum bounty amount a player can place
+  max-bounty: 1000000
+  # Cooldown in seconds between placing bounties
+  add-cooldown: 60
+  # GUI title
+  gui-title: "§6§lBounty Menu"
+  # How many top bounties to show in the GUI
+  top-bounties-display: 9
+
+messages:
+  prefix: "§8[§6Bounties§8] §r"
+  bounty-placed: "§aYou placed a bounty of §6${amount} §aon §e{target}§a!"
+  bounty-collected: "§6{killer} §acollected the bounty of §6${amount} §aon §e{target}§a!"
+  bounty-cleared: "§cThe bounty on §e{target} §chas been cleared."
+  bounty-not-found: "§cNo bounty found for that player."
+  no-permission: "§cYou don't have permission to do that."
+  not-enough-money: "§cYou don't have enough money! You need §6${amount}§c."
+  on-cooldown: "§cYou're on cooldown! Wait §e{seconds}s §cbefore placing another bounty."
+  invalid-amount: "§cInvalid amount. Must be between §6${min} §cand §6${max}§c."
+  cannot-bounty-self: "§cYou can't place a bounty on yourself, bro 💀"
+  player-not-found: "§cPlayer not found."
+  plugin-reloaded: "§aPlugin reloaded successfully."
+  bounty-confirmed: "§aYou confirmed a bounty of §6${amount} §aon §e{target}§a."
+  bounty-cancelled: "§cBounty placement cancelled."
+  no-bounties: "§cThis player has no bounties."
