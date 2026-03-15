@@ -1,4 +1,4 @@
-# 🏴‍☠️ Bounties — GPLv3 Open Source Bounty Plugin
+# 🏴‍☠️ Bounty Redux — GPLv3 Open Source Bounty Plugin
 > A free, open-source bounty plugin for Paper servers. Inspired by the DonutSMP Bounty Plugin.
 
 ---
