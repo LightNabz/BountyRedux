@@ -28,8 +28,8 @@ public class BountyConfirmGUI {
         Inventory inv = Bukkit.createInventory(null, 27, title);
 
         // Fill with glass
-        ItemStack glass = makeItem(Material.GRAY_STAINED_GLASS_PANE, "§r");
-        for (int i = 0; i < 27; i++) inv.setItem(i, glass);
+        // ItemStack glass = makeItem(Material.GRAY_STAINED_GLASS_PANE, "§r");
+        // for (int i = 0; i < 27; i++) inv.setItem(i, glass);
 
         // Info item
         ItemStack info = makeItem(Material.GOLD_INGOT, "§6§lBounty Details",

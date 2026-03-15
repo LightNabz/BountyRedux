@@ -46,13 +46,13 @@ public class BountiesPlugin extends JavaPlugin {
 
         getServer().getPluginManager().registerEvents(new PlayerDeathListener(this), this);
 
-        getLogger().info("Bounties enabled! GPLv3 and free forever 🙏");
+        getLogger().info("Bounty Redux enabled!");
     }
 
     @Override
     public void onDisable() {
         if (databaseManager != null) databaseManager.disconnect();
-        getLogger().info("Bounties disabled.");
+        getLogger().info("Bounty Redux disabled.");
     }
 
     public static BountiesPlugin getInstance() { return instance; }
@@ -62,7 +62,7 @@ public class BountiesPlugin extends JavaPlugin {
     public CooldownManager getCooldownManager() { return cooldownManager; }
 
     public String getMessage(String key) {
-        String prefix = getConfig().getString("messages.prefix", "[Bounties] ");
+        String prefix = getConfig().getString("messages.prefix", "[Bounty Redux] ");
         String msg = getConfig().getString("messages." + key, "§cMissing message: " + key);
         return prefix + msg;
     }

@@ -33,7 +33,7 @@ public class BountyCommand implements CommandExecutor, TabCompleter {
         this.confirmGUI = new BountyConfirmGUI(plugin);
 
         // Register GUI listener here
-        plugin.getServer().getPluginManager().registerEvents(new GUIListener(plugin), plugin);
+        plugin.getServer().getPluginManager().registerEvents(new GUIListener(plugin, mainGUI, confirmGUI), plugin);
     }
 
     @Override
@@ -44,8 +44,7 @@ public class BountyCommand implements CommandExecutor, TabCompleter {
         }
 
         if (args.length == 0) {
-            // Open main GUI
-            mainGUI.open(player);
+            mainGUI.open(player, 1, true); // page 1, sort by amount
             return true;
         }
 
@@ -54,7 +53,7 @@ public class BountyCommand implements CommandExecutor, TabCompleter {
             case "search" -> handleSearch(player, args);
             case "clear" -> handleClear(player, args);
             case "reload" -> handleReload(player);
-            default -> mainGUI.open(player);
+            default -> mainGUI.open(player, 1, true);
         }
         return true;
     }

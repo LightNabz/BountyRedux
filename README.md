@@ -1,13 +1,13 @@
 # 🏴‍☠️ Bounties — GPLv3 Open Source Bounty Plugin
 
-> A free, open-source bounty plugin for Paper servers. Inspired by the DonutSMP Bounty Plugin. Unlike the original, this one is free forever. 🙏
+> A free, open-source bounty plugin for Paper servers. Inspired by the DonutSMP Bounty Plugin.
 
 ---
 
 ## ⚡ Features
 
 - Smooth bounty GUI with top bounties display
-- Add bounties on any player via command or GUI
+- Add bounties on any player via command
 - Confirmation menu to prevent accidental placements
 - Cooldowns to prevent bounty spam
 - Vault economy integration
@@ -49,19 +49,19 @@
 1. Download the latest `.jar` from Releases
 2. Drop it in your server's `/plugins` folder
 3. Restart the server
-4. Edit `plugins/Bounties/config.yml` if needed
+4. Edit `plugins/BountyRedux/config.yml` if needed
 
 ---
 
 ## 🛠️ Building from Source
 
 ```bash
-git clone https://github.com/yourname/bounties.git
+git clone https://github.com/LightNabz/BountyRedux.git
 cd bounties
 mvn clean package
 ```
 
-The built jar will be in `/target/Bounties-1.0.0.jar`.
+The built jar will be in `/target/BountyRedux-1.0.0.jar`.
 
 ---
 
@@ -69,5 +69,3 @@ The built jar will be in `/target/Bounties-1.0.0.jar`.
 
 This project is licensed under the **GNU General Public License v3.0**.  
 See [LICENSE](LICENSE) for details.
-
-Free forever. Open forever. 🙏

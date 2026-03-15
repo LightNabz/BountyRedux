@@ -1,10 +1,10 @@
-name: Bounties
+name: BountyRedux
 version: '${project.version}'
 main: dev.bountyredux.BountiesPlugin
 api-version: '1.21'
 description: GPLv3 Bounty plugin — open source replica inspired by DonutSMP.
 authors: [ LightNabz ]
-website: https://github.com/LightNabz/bounty-redux
+website: https://github.com/LightNabz/BountyRedux
 
 depend:
   - Vault
