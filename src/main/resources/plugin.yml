@@ -17,7 +17,7 @@ commands:
   bounty:
     description: Main bounty command.
     usage: /bounty [add|search|clear|reload|track]
-    permission: bounties.use
+    permission: bountyredux.use
 
 permissions:
   bountyredux.use:
