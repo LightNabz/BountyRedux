@@ -1,4 +1,4 @@
-# 🏴‍☠️ Bounty Redux — GPLv3 Open Source Bounty Plugin
+# 🏴‍☠️ Bounty Redux
 > A free, open-source bounty plugin for Paper servers. Inspired by the DonutSMP Bounty Plugin.
 
 ---
@@ -15,7 +15,7 @@
 - Fully customizable messages via `config.yml`
 - Tab completion on all commands
 - SQLite persistence — bounties survive restarts
-- **🔓 Full cracked server support** — player skulls render correctly for both premium and cracked players, even offline, even with SkinRestorer
+- **🔓 Full offline-mode server support** — player skulls render correctly for all players, even when offline, even with SkinRestorer
 
 ---
 
@@ -25,18 +25,18 @@
 |---|---|
 | Vault | [SpigotMC](https://www.spigotmc.org/resources/vault.34315/) |
 | EssentialsX *(optional)* | [SpigotMC](https://www.spigotmc.org/resources/essentialsx.9089/) |
-| SkinRestorer *(optional, recommended for cracked servers)* | [SpigotMC](https://www.spigotmc.org/resources/skinsrestorer.2124/) |
+| SkinRestorer *(optional, recommended for offline-mode servers)* | [SpigotMC](https://www.spigotmc.org/resources/skinsrestorer.2124/) |
 
 ---
 
-## 🔓 Cracked Server Support
+## 🔓 Offline Mode Server Support
 
-Most bounty plugins render player skulls using Bukkit's offline player cache — which means skulls break the moment a player logs off, and cracked players never render at all.
+Most bounty plugins render player skulls using Bukkit's offline player cache — which means skulls break the moment a player logs off, and offline-authenticated players never render at all.
 
 This plugin fixes that properly:
 
 - On every join, the player's skin texture (including SkinRestorer-injected skins) is cached directly into the local SQLite database
-- Skulls are rendered from this texture cache — no dependency on whether the player is online, premium, or cracked
+- Skulls are rendered from this texture cache — no dependency on whether the player is currently online
 - Works out of the box with SkinRestorer — no extra configuration needed
 
 ---
@@ -136,7 +136,7 @@ cd bounties
 mvn clean package
 ```
 
-The built jar will be in `/target/BountyRedux-1.0.0.jar`.
+The built jar will be in `/target/BountyRedux-{version}.jar`.
 
 ---
 
